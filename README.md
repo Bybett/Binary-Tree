@@ -1,18 +1,18 @@
-# ProjectName
+# Binary Tree
 
 This project is to learn about binary sorting trees using C and Raylib.\
 Each node is a struct that stores:\
-    -Left *\
-    -Right *\
-    -Parent *\
-    -Int value\
-    -Vector2\
-    -Colour\
+    - Left *\
+    - Right *\
+    - Parent *\
+    - Int value\
+    - Vector2\
+    - Colour\
 The left node will be the child with a lower int value, with the right node having the higher value.\
 I am using Raylib to create a visual display of the node hierarchy. Each node will be a circle with its
 value display on it with and two lines that point to its children.
 
-<br/><br/><br/>
+<br/><br/>
 
 ## Getting Started
 
@@ -36,7 +36,7 @@ value display on it with and two lines that point to its children.
 * Check if you have raylib installed correctly.
 * Check CMakeList.txt is configured correctly for your platform.
 * Cmake built the project correctly.
-<br/><br/><br/>
+<br/><br/>
 
 ## Authors
 
