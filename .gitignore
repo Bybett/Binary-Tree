@@ -1,0 +1,8 @@
+# Ignore these folders. Don't need to push them.
+build/
+.cache/
+.git/
+
+# Ignore these files, cmake builds them per system
+.clangd
+
