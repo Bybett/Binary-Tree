@@ -6,8 +6,8 @@
 
 
 #define RADIUS 12
-#define Y_OFFSET 4
-#define X_OFFSET 4
+#define Y_OFFSET 20
+#define X_OFFSET 20
 
 typedef struct Node {
   struct Node *left; // Left will point to the child with the lower value.
@@ -76,31 +76,34 @@ void generateTree(Node *node, VisualNode **tree, int *tree_size) {
     *tree_size = *tree_size + 1;
     printf("====size:%i====\n", *tree_size);
     VisualNode *temp = realloc(*tree, *tree_size * sizeof(VisualNode)); // Make the tree list + 1 longer
-
+    printf("Test 1\n");
     if (!temp) {
       printf("Error re-allocating tree... exiting\n"); 
       exit(1);
     }
 
+    printf("Test 2\n");
+    printf("====Size:%i\n", *tree_size);
     *tree = temp;
-    VisualNode prev_node = *tree[*tree_size - 2]; // We will need some data from the node in tree[tree_size - 2]
+    printf("Test 3\n");
+    VisualNode prev_node = (*tree)[*tree_size - 2]; // We will need some data from the node in tree[tree_size - 2]
     // Current working node, the most recently added one. The reason for the &(*tree) is to get the address of the item at the desried index. tree, is a ptr to a ptr.
-    VisualNode *current_node = &(*tree)[*tree_size - 1]; 
+    VisualNode *current_node = &(*tree)[*tree_size - 1];
     printf("VisualNodes prev_node and current_node made...\n");
     current_node->node = node;
     current_node->circle.radius = RADIUS;
     printf("Checking if current_node is Right...\n");
 
-   // if (prev_node.node->right) {
-   //   printf("Is Right child...\n");
-   //   current_node->circle.pos_x = prev_node.circle.pos_x - X_OFFSET;
-   // } else {
-   //   printf("Not Right child...\n");
-   //   current_node->circle.pos_x = prev_node.circle.pos_x + X_OFFSET;
-   // }
+    if (prev_node.node->right) {
+      printf("Is Right child...\n");
+      current_node->circle.pos_x = prev_node.circle.pos_x - X_OFFSET;
+      current_node->circle.pos_y = prev_node.circle.pos_y;
+    } else {
+      printf("Not Right child...\n");
+      current_node->circle.pos_x = prev_node.circle.pos_x + X_OFFSET;
+      current_node->circle.pos_y = prev_node.circle.pos_y + RADIUS + Y_OFFSET;
+    }
 
-    printf("Done Right check...\n");
-    current_node->circle.pos_y = prev_node.circle.pos_y + RADIUS + Y_OFFSET;
   }
   printf("====SIZE:%i====\n", *tree_size);
   printf("Exited !node->left...\n");
