@@ -3,35 +3,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
+#define RADIUS 16.0
+#define X_OFFSET (RADIUS)
+#define Y_OFFSET (RADIUS * 3)
 
-#define RADIUS 12
-#define Y_OFFSET 20
-#define X_OFFSET 20
+typedef struct Circle {
+  float pos_x;
+  float pos_y;
+  Color colour;
+} Circle;
 
 typedef struct Node {
   struct Node *left; // Left will point to the child with the lower value.
   struct Node *right;
+  struct Node *parent;
   int value; // Raylib will display nodes as cirlces. Each node will display their value.
   int depth;
-} Node;
-
-typedef struct Circle {
-  int pos_x;
-  int pos_y;
-  int radius;
-  Color colour;
-} Circle;
-
-typedef struct VisualNode {
   Circle circle;
-  Node *node;
-} VisualNode;
+} Node;
 
 
 void printTree(Node *node) {
   if (node->left != NULL) printTree(node->left);
-  printf("val:%i || dep:%i\n", node->value, node->depth);
+  printf("val:%i || dep:%i pos_x: %f || pos_y:%f\n", node->value, node->depth, node->circle.pos_x, node->circle.pos_y);
   if (node->right != NULL) printTree(node->right);
 }
 
@@ -41,7 +37,7 @@ void bInsert(Node *node, int value) {
     return;
   }
   // If the value to insert is smaller than the node's value, check the child and make it if needed
-  // and then insert the value or traverse the tree.
+  // and then insert the value, or traverse the tree if there is already a child.
   if (node->value > value) {
     if (!node->left) {
       node->left = (Node *)malloc(sizeof(Node));
@@ -49,11 +45,16 @@ void bInsert(Node *node, int value) {
       node->left->left = NULL;
       node->left->right = NULL;
       node->left->depth = node->depth + 1;
+      node->left->circle.colour = RED;
+      // This is to position the child node in the middle of its parent node and its grandparent
+      node->left->circle.pos_x = (node->circle.pos_x - RADIUS) - (((float)WINDOW_WIDTH) / pow(2, node->depth + 2));
+      node->left->circle.pos_y = Y_OFFSET + (Y_OFFSET * node->left->depth * 1.50);
     } else {
       bInsert(node->left, value);
     }
-  // If the value to insert is bigger than the node's value, check the child and make if needed
-  // and insert the value or traverse the tree.
+
+  // If the value to insert is bigger than the node's value, check the child and make if it needed
+  // then insert the value, or traverse the tree if there is already a child.
   } else if (node->value < value) {
     if (!node->right) {
       node->right = (Node *)malloc(sizeof(Node));
@@ -61,6 +62,10 @@ void bInsert(Node *node, int value) {
       node->right->left = NULL;
       node->right->right = NULL;
       node->right->depth = node->depth + 1;
+      node->right->circle.colour = BLUE;
+      // This is to position the child node in the middle of its parent node and its grandparent
+      node->right->circle.pos_x = (node->circle.pos_x + RADIUS) + (((float)WINDOW_WIDTH) / pow(2, node->depth + 2));
+      node->right->circle.pos_y = Y_OFFSET + (Y_OFFSET * node->right->depth * 1.5);
     } else {
       bInsert(node->right, value);
     }
@@ -68,57 +73,27 @@ void bInsert(Node *node, int value) {
 }
 
 
-// TODO: Finish this function. Seg fault &|| free() error in here
-void generateTree(Node *node, VisualNode **tree, int *tree_size) {
-  // No left node? We've found a leaf to add to the visual tree.
-  if (!node->left) {
-    printf("Leaf found...\n");
-    *tree_size = *tree_size + 1;
-    printf("====size:%i====\n", *tree_size);
-    VisualNode *temp = realloc(*tree, *tree_size * sizeof(VisualNode)); // Make the tree list + 1 longer
-    printf("Test 1\n");
-    if (!temp) {
-      printf("Error re-allocating tree... exiting\n"); 
-      exit(1);
-    }
+void renderTree(Node *node) {
+  // Drawing the circles that represent the nodes.
+  DrawCircle(node->circle.pos_x, node->circle.pos_y, RADIUS, node->circle.colour);
+  char str[8];
+  sprintf(str, "%d", node->value);
+  // Center the text on the circle
+  Vector2 text_width = MeasureTextEx(GetFontDefault(), str, 20, 2);
+  DrawText(str, node->circle.pos_x - text_width.x / 2, node->circle.pos_y - text_width.y / 2, 20, BLACK);
 
-    printf("Test 2\n");
-    printf("====Size:%i\n", *tree_size);
-    *tree = temp;
-    printf("Test 3\n");
-    VisualNode prev_node = (*tree)[*tree_size - 2]; // We will need some data from the node in tree[tree_size - 2]
-    // Current working node, the most recently added one. The reason for the &(*tree) is to get the address of the item at the desried index. tree, is a ptr to a ptr.
-    VisualNode *current_node = &(*tree)[*tree_size - 1];
-    printf("VisualNodes prev_node and current_node made...\n");
-    current_node->node = node;
-    current_node->circle.radius = RADIUS;
-    printf("Checking if current_node is Right...\n");
-
-    if (prev_node.node->right) {
-      printf("Is Right child...\n");
-      current_node->circle.pos_x = prev_node.circle.pos_x - X_OFFSET;
-      current_node->circle.pos_y = prev_node.circle.pos_y;
-    } else {
-      printf("Not Right child...\n");
-      current_node->circle.pos_x = prev_node.circle.pos_x + X_OFFSET;
-      current_node->circle.pos_y = prev_node.circle.pos_y + RADIUS + Y_OFFSET;
-    }
-
+  if (node->left) {
+    // For drawin the lines between parent and child.
+    DrawLine(node->circle.pos_x, node->circle.pos_y + RADIUS,
+             node->left->circle.pos_x, node->left->circle.pos_y - RADIUS, BLACK);
+    renderTree(node->left);
   }
-  printf("====SIZE:%i====\n", *tree_size);
-  printf("Exited !node->left...\n");
 
-  // If there is a left node, we till have further to traverse until we find a leaf
-  if (node->left) {generateTree(node->left, tree, tree_size);}
-
-  if (node->right) {generateTree(node->right, tree, tree_size);}
-}
-
-
-void renderTree(VisualNode *tree, int *tree_size) {
-  for (int i = 0; i < *tree_size; i++) {
-    VisualNode current_node = tree[i];
-    DrawCircle(current_node.circle.pos_x, current_node.circle.pos_y, RADIUS, BLACK);
+  if (node->right) {
+    // For drawin the lines between parent and child.
+    DrawLine(node->circle.pos_x, node->circle.pos_y + RADIUS,
+             node->right->circle.pos_x, node->right->circle.pos_y - RADIUS, BLACK);
+    renderTree(node->right);
   }
 }
 
@@ -127,30 +102,30 @@ int main() {
   Node *root = (Node *)malloc(sizeof(Node));
   root->value = 7;
   root->depth = 0;
+  root->circle.pos_x = (float)WINDOW_WIDTH / 2;
+  root->circle.pos_y = Y_OFFSET;
+  root->circle.colour = PURPLE;
 
-  int size = 1;
-  int *tree_size = &size;
-  VisualNode *tree = (VisualNode *)malloc(sizeof(VisualNode));
-  tree[0].circle.pos_x = WINDOW_WIDTH / 2;
-  tree[0].circle.pos_y = RADIUS + (Y_OFFSET * 2);
-  tree[0].node = root;
-
-  bInsert(root, 8);
+  bInsert(root, 1);
   bInsert(root, 3);
   bInsert(root, 11);
   bInsert(root, 22);
   bInsert(root, 8);
   bInsert(root, 4);
-
-  //printTree(root);
-  generateTree(root, &tree, tree_size);
-
-  InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Unsorted Binary Search Tree");
+  bInsert(root, 13);
+  bInsert(root, 6);
+  bInsert(root, 17);
+  bInsert(root, 12);
+  bInsert(root, 21);
+  bInsert(root, 16);
+  bInsert(root, 23);
+  bInsert(root, 5);
+  printTree(root);
+  InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Binary Search Tree: Visualizer");
   while (!WindowShouldClose()) {
     BeginDrawing();
     ClearBackground(WHITE);
-    renderTree(tree, tree_size);
-    DrawCircle(tree[0].circle.pos_x, tree[0].circle.pos_y, RADIUS, BLACK);
+    renderTree(root);
     EndDrawing();
   }
   CloseWindow();
